@@ -2,6 +2,10 @@ import { Telegraf, Markup } from "telegraf";
 import { message } from "telegraf/filters";
 import { createClient } from "@supabase/supabase-js";
 import express from "express";
+import { fileURLToPath } from "url";
+import { join, dirname } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_ID = Number(process.env.ADMIN_ID ?? "0");
@@ -152,9 +156,17 @@ async function logBroadcast(message, sentCount) {
 
 bot.command("start", async (ctx) => {
   await registerUser(ctx.from.id, ctx.from.username, ctx.from.first_name);
+  const appUrl = WEBHOOK_URL || null;
+  const rows = [
+    [Markup.button.callback("🔍 Search", "search"), Markup.button.callback("🎭 Browse by Genre", "browse_genre")],
+    [Markup.button.callback("🆕 Latest Releases", "latest"), Markup.button.callback("💎 Premium Content", "premium_info")],
+    [Markup.button.callback("📋 My Account", "my_account")],
+  ];
+  if (appUrl) rows.unshift([Markup.button.webApp("🎬 Open DY SHOWS App", appUrl)]);
+  if (isAdmin(ctx)) rows.push([Markup.button.callback("⚙️ Admin Panel", "admin_panel")]);
   await ctx.reply(
     `🎥 *Welcome to DY SHOWS!*\n\nYour gateway to the finest movies and series.\nStream premium content right here on Telegram.\n\nUse the menu below to explore:`,
-    { parse_mode: "Markdown", ...mainMenuKeyboard(isAdmin(ctx)) }
+    { parse_mode: "Markdown", ...Markup.inlineKeyboard(rows) }
   );
 });
 
@@ -718,26 +730,90 @@ bot.on(message("photo"), async (ctx) => {
 
 bot.catch((err) => { console.error("Bot error:", err); });
 
-// ─── Express + Webhook ───────────────────────────────────────────────────────
+// ─── Express + Webhook / Polling ─────────────────────────────────────────────
 
 const app = express();
 app.use(express.json());
+app.use(express.static(join(__dirname, "public")));
 
 app.get("/healthz", (_req, res) => res.json({ status: "ok", service: "DY SHOWS" }));
+
+// ── Mini App API Routes ────────────────────────────────────
+app.get("/api/content", async (req, res) => {
+  try {
+    let query = supabase.from("content").select("*");
+    if (req.query.type) query = query.eq("type", req.query.type);
+    if (req.query.premium === "true") query = query.eq("is_premium", true);
+    if (req.query.genre) query = query.contains("genre", [req.query.genre]);
+    const limit = Math.min(Number(req.query.limit) || 50, 100);
+    query = query.order("created_at", { ascending: false }).limit(limit);
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data ?? []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/content/:id", async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("content").select("*").eq("id", req.params.id).single();
+    if (error) return res.status(404).json({ error: "Not found" });
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/content/:id/episodes", async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("episodes").select("*").eq("content_id", req.params.id).order("season").order("episode");
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data ?? []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/search", async (req, res) => {
+  try {
+    const q = req.query.q || "";
+    if (!q.trim()) return res.json([]);
+    const { data, error } = await supabase.from("content").select("*")
+      .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
+      .order("created_at", { ascending: false }).limit(20);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data ?? []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 app.post("/webhook", async (req, res) => {
   try { await bot.handleUpdate(req.body); } catch (e) { console.error(e); }
   res.sendStatus(200);
 });
 
-app.listen(PORT, async () => {
-  console.log(`DY SHOWS bot running on port ${PORT}`);
+async function start() {
   if (WEBHOOK_URL) {
-    try {
-      await bot.telegram.setWebhook(`${WEBHOOK_URL}/webhook`);
-      console.log(`Webhook set to ${WEBHOOK_URL}/webhook`);
-    } catch (e) { console.error("Failed to set webhook:", e.message); }
+    // Webhook mode — best for Render/production
+    await bot.telegram.deleteWebhook();
+    app.listen(PORT, async () => {
+      console.log(`DY SHOWS bot running on port ${PORT} (webhook mode)`);
+      try {
+        await bot.telegram.setWebhook(`${WEBHOOK_URL}/webhook`);
+        console.log(`✅ Webhook set: ${WEBHOOK_URL}/webhook`);
+      } catch (e) {
+        console.error("❌ Failed to set webhook:", e.message);
+      }
+    });
   } else {
-    console.warn("WEBHOOK_URL not set — bot won't receive messages until webhook is configured");
+    // Polling mode — works immediately without a public URL
+    console.log("WEBHOOK_URL not set — starting in polling mode");
+    await bot.telegram.deleteWebhook({ drop_pending_updates: true });
+    // Keep Express alive for health checks (Render requires a port to be open)
+    app.listen(PORT, () => {
+      console.log(`DY SHOWS bot running on port ${PORT} (polling mode)`);
+    });
+    bot.launch();
+    console.log("✅ Bot launched with long polling");
   }
-});
+
+  // Graceful shutdown
+  process.once("SIGINT", () => bot.stop("SIGINT"));
+  process.once("SIGTERM", () => bot.stop("SIGTERM"));
+}
+
+start().catch((e) => { console.error("Fatal error:", e); process.exit(1); });
