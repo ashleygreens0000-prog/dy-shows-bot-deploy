@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>DY SHOWS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --bg2: #141417;
+      --bg3: #1c1c21;
+      --card: #18181d;
+      --border: #2a2a32;
+      --gold: #e8b84b;
+      --gold2: #f5d07a;
+      --red: #e5484d;
+      --text: #f0f0f5;
+      --text2: #9898a8;
+      --text3: #5a5a6a;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,13,15,0.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-back {
+      display: none;
+      width: 34px;
+      height: 34px;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg3);
+      border-radius: 50%;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .header-back.visible { display: flex; }
+    .logo {
+      font-family: 'Lora', serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo span { font-style: italic; }
+    .header-search-btn {
+      margin-left: auto;
+      background: var(--bg3);
+      border: none;
+      color: var(--text2);
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+
+    /* ── Search Bar ── */
+    .search-bar {
+      display: none;
+      padding: 10px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .search-bar.open { display: flex; }
+    .search-bar input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 10px 16px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .search-bar input::placeholder { color: var(--text3); }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 10px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.18s;
+    }
+    .tab.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #0d0d0f;
+      font-weight: 600;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; padding-bottom: calc(80px + var(--safe-bot)); }
+    .screen.active { display: block; }
+
+    /* ── Section header ── */
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 18px 16px 12px;
+    }
+    .section-title {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .section-see-all {
+      font-size: 13px;
+      color: var(--gold);
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    /* ── Featured Banner ── */
+    .featured {
+      margin: 0 16px 6px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      height: 200px;
+      background: var(--bg3);
+      cursor: pointer;
+    }
+    .featured-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .featured-gradient {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(13,13,15,0.95) 0%, rgba(13,13,15,0.3) 60%, transparent 100%);
+    }
+    .featured-badge {
+      position: absolute; top: 12px; left: 12px;
+      background: var(--gold);
+      color: #0d0d0f;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .featured-info {
+      position: absolute; bottom: 14px; left: 14px; right: 14px;
+    }
+    .featured-title {
+      font-family: 'Lora', serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .featured-meta { font-size: 12px; color: var(--text2); }
+
+    /* ── Horizontal scroll row ── */
+    .scroll-row {
+      display: flex;
+      gap: 12px;
+      padding: 0 16px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .scroll-row::-webkit-scrollbar { display: none; }
+
+    /* ── Card ── */
+    .card {
+      flex-shrink: 0;
+      width: 130px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .card:active { transform: scale(0.96); }
+    .card-thumb {
+      width: 130px;
+      height: 190px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background: var(--bg3);
+      display: block;
+      position: relative;
+    }
+    .card-thumb-wrap {
+      position: relative;
+      width: 130px; height: 190px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--bg3);
+      margin-bottom: 8px;
+    }
+    .card-thumb-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-thumb-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+      background: linear-gradient(135deg, var(--bg3), var(--bg2));
+    }
+    .card-premium-badge {
+      position: absolute; top: 6px; right: 6px;
+      background: var(--gold);
+      color: #0d0d0f;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 50px;
+    }
+    .card-type-badge {
+      position: absolute; bottom: 6px; left: 6px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.35;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-year { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 0 16px;
+    }
+    .grid .card { width: 100%; }
+    .grid .card-thumb-wrap { width: 100%; height: 0; padding-bottom: 146%; }
+    .grid .card-thumb-wrap img { position: absolute; inset: 0; }
+    .grid .card-thumb-placeholder { position: absolute; inset: 0; height: auto; }
+
+    /* ── Genre grid ── */
+    .genre-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 0 16px;
+    }
+    .genre-pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .genre-pill:active { background: var(--gold); border-color: var(--gold); }
+    .genre-pill:active .genre-name { color: #0d0d0f; }
+    .genre-icon { font-size: 22px; margin-bottom: 5px; }
+    .genre-name { font-size: 12px; font-weight: 500; color: var(--text2); }
+
+    /* ── Detail Screen ── */
+    .detail-hero {
+      width: 100%;
+      height: 260px;
+      position: relative;
+      background: var(--bg3);
+    }
+    .detail-hero img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .detail-hero-gradient {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, var(--bg) 0%, transparent 60%);
+    }
+    .detail-body { padding: 0 16px 20px; }
+    .detail-title {
+      font-family: 'Lora', serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: -32px;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 8px;
+    }
+    .detail-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .meta-tag {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .meta-tag.premium { background: rgba(232,184,75,0.12); border-color: var(--gold); color: var(--gold); }
+    .detail-desc {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .watch-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #0d0d0f;
+      border: none;
+      border-radius: var(--radius);
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .watch-btn:active { opacity: 0.85; }
+    .watch-btn.locked {
+      background: var(--bg3);
+      color: var(--text2);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Episodes ── */
+    .season-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .season-tab {
+      flex-shrink: 0;
+      padding: 6px 16px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .season-tab.active { background: var(--gold); border-color: var(--gold); color: #0d0d0f; font-weight: 600; }
+    .episode-list { padding: 0 16px; }
+    .episode-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .episode-item:last-child { border-bottom: none; }
+    .ep-num {
+      width: 36px; height: 36px;
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .ep-info { flex: 1; }
+    .ep-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .ep-meta { font-size: 12px; color: var(--text3); }
+    .ep-play {
+      width: 32px; height: 32px;
+      background: var(--gold);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Search results ── */
+    .search-results { padding: 10px 16px; }
+    .result-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      align-items: center;
+    }
+    .result-thumb {
+      width: 54px; height: 78px;
+      border-radius: var(--radius-sm);
+      background: var(--bg3);
+      object-fit: cover;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      overflow: hidden;
+    }
+    .result-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .result-info { flex: 1; }
+    .result-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .result-meta { font-size: 12px; color: var(--text3); }
+
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(13,13,15,0.96);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: var(--safe-bot);
+      z-index: 100;
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 10px 0 8px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 10px;
+      font-family: 'Inter', sans-serif;
+      transition: color 0.15s;
+    }
+    .nav-btn svg { width: 22px; height: 22px; }
+    .nav-btn.active { color: var(--gold); }
+
+    /* ── Loading ── */
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 0;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text3);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; }
+
+    /* ── Premium Gate ── */
+    .premium-gate {
+      margin: 16px;
+      background: linear-gradient(135deg, rgba(232,184,75,0.1), rgba(232,184,75,0.05));
+      border: 1px solid rgba(232,184,75,0.3);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+    .premium-gate-icon { font-size: 36px; margin-bottom: 10px; }
+    .premium-gate-title { font-family: 'Lora', serif; font-size: 18px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+    .premium-gate-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 90px; left: 50%; transform: translateX(-50%);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-size: 14px;
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <button class="header-back" id="backBtn" onclick="goBack()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="logo">DY <span>SHOWS</span></div>
+  <button class="header-search-btn" onclick="toggleSearch()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  </button>
+</div>
+
+<!-- Search Bar -->
+<div class="search-bar" id="searchBar">
+  <input type="text" id="searchInput" placeholder="Search movies & series..." oninput="handleSearch(this.value)" autofocus />
+</div>
+
+<!-- Tabs -->
+<div class="tabs" id="mainTabs">
+  <button class="tab active" onclick="switchTab('home', this)">🏠 Home</button>
+  <button class="tab" onclick="switchTab('movies', this)">🎥 Movies</button>
+  <button class="tab" onclick="switchTab('series', this)">📺 Series</button>
+  <button class="tab" onclick="switchTab('genres', this)">🎭 Genres</button>
+  <button class="tab" onclick="switchTab('premium', this)">💎 Premium</button>
+</div>
+
+<!-- ══ HOME SCREEN ══ -->
+<div class="screen active" id="screen-home">
+  <div id="featuredWrap"></div>
+  <div class="section-head">
+    <span class="section-title">Latest Releases</span>
+  </div>
+  <div class="scroll-row" id="latestRow">
+    <div class="loader"><div class="spinner"></div></div>
+  </div>
+  <div class="section-head">
+    <span class="section-title">All Content</span>
+  </div>
+  <div class="grid" id="allGrid" style="padding-bottom:16px"></div>
+</div>
+
+<!-- ══ MOVIES SCREEN ══ -->
+<div class="screen" id="screen-movies">
+  <div class="section-head"><span class="section-title">Movies</span></div>
+  <div class="grid" id="moviesGrid"></div>
+</div>
+
+<!-- ══ SERIES SCREEN ══ -->
+<div class="screen" id="screen-series">
+  <div class="section-head"><span class="section-title">Series</span></div>
+  <div class="grid" id="seriesGrid"></div>
+</div>
+
+<!-- ══ GENRES SCREEN ══ -->
+<div class="screen" id="screen-genres">
+  <div class="section-head"><span class="section-title">Browse by Genre</span></div>
+  <div class="genre-grid" id="genreGrid"></div>
+  <div id="genreResults" style="margin-top:16px"></div>
+</div>
+
+<!-- ══ PREMIUM SCREEN ══ -->
+<div class="screen" id="screen-premium">
+  <div class="premium-gate" style="margin-top:16px">
+    <div class="premium-gate-icon">💎</div>
+    <div class="premium-gate-title">DY SHOWS Premium</div>
+    <div class="premium-gate-text">Get unlimited access to all exclusive movies and series.<br/><br/>✅ Exclusive movies &nbsp; ✅ Full series<br/>✅ HD quality &nbsp; ✅ Early access<br/><br/>Contact <b>@DYShowsAdmin</b> on Telegram to subscribe.</div>
+  </div>
+  <div class="section-head"><span class="section-title">Premium Content</span></div>
+  <div class="grid" id="premiumGrid"></div>
+</div>
+
+<!-- ══ DETAIL SCREEN ══ -->
+<div class="screen" id="screen-detail">
+  <div id="detailContent"></div>
+</div>
+
+<!-- ══ SEARCH RESULTS ══ -->
+<div class="screen" id="screen-search">
+  <div class="section-head"><span class="section-title" id="searchTitle">Search</span></div>
+  <div class="search-results" id="searchResults"></div>
+</div>
+
+<!-- ══ GENRE RESULTS ══ -->
+<div class="screen" id="screen-genre-results">
+  <div class="section-head"><span class="section-title" id="genreResultTitle">Genre</span></div>
+  <div class="grid" id="genreResultGrid" style="padding-bottom:16px"></div>
+</div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="switchTab('home', null, 'nav-home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button class="nav-btn" id="nav-movies" onclick="switchTab('movies', null, 'nav-movies')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+    Movies
+  </button>
+  <button class="nav-btn" id="nav-series" onclick="switchTab('series', null, 'nav-series')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+    Series
+  </button>
+  <button class="nav-btn" id="nav-genres" onclick="switchTab('genres', null, 'nav-genres')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Browse
+  </button>
+  <button class="nav-btn" id="nav-premium" onclick="switchTab('premium', null, 'nav-premium')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    Premium
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Telegram WebApp Init ──────────────────────────────────
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#0d0d0f');
+    tg.setBackgroundColor('#0d0d0f');
+  }
+
+  // ── State ─────────────────────────────────────────────────
+  const BASE = window.location.origin;
+  let currentScreen = 'home';
+  let screenStack = [];
+  let allContent = [];
+  let searchTimeout = null;
+  let currentDetail = null;
+
+  const GENRE_ICONS = {
+    Action:'💥', Comedy:'😂', Drama:'🎭', Horror:'👻', Romance:'💕',
+    Thriller:'🔪', 'Sci-Fi':'🚀', Animation:'✨', Documentary:'📽️',
+    Crime:'🕵️', Fantasy:'🧙', Mystery:'🔮', Adventure:'⚔️',
+    Biography:'📖', History:'🏛️'
+  };
+
+  // ── API ───────────────────────────────────────────────────
+  async function api(path) {
+    try {
+      const res = await fetch(BASE + path);
+      if (!res.ok) throw new Error(res.statusText);
+      return res.json();
+    } catch { return null; }
+  }
+
+  // ── Navigation ────────────────────────────────────────────
+  function showScreen(name, pushHistory = true) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name)?.classList.add('active');
+    if (pushHistory && name !== currentScreen) screenStack.push(currentScreen);
+    currentScreen = name;
+    const isRoot = ['home','movies','series','genres','premium'].includes(name);
+    document.getElementById('backBtn').classList.toggle('visible', !isRoot);
+    document.getElementById('mainTabs').style.display = isRoot ? 'flex' : 'none';
+    if (tg) tg.BackButton[isRoot ? 'hide' : 'show']();
+  }
+
+  function goBack() {
+    if (screenStack.length > 0) {
+      const prev = screenStack.pop();
+      showScreen(prev, false);
+      syncNavBtns(prev);
+    }
+  }
+
+  if (tg) tg.BackButton.onClick(goBack);
+
+  function syncNavBtns(name) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const nb = document.getElementById('nav-' + name);
+    if (nb) nb.classList.add('active');
+  }
+
+  function switchTab(name, tabEl, navId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    if (tabEl) tabEl.classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if (navId) document.getElementById(navId)?.classList.add('active');
+    screenStack = [];
+    showScreen(name, false);
+    loadScreen(name);
+    closeSearch();
+  }
+
+  // ── Loaders ───────────────────────────────────────────────
+  async function loadScreen(name) {
+    if (name === 'home') loadHome();
+    else if (name === 'movies') loadGrid('moviesGrid', '/api/content?type=movie');
+    else if (name === 'series') loadGrid('seriesGrid', '/api/content?type=series');
+    else if (name === 'genres') renderGenres();
+    else if (name === 'premium') loadGrid('premiumGrid', '/api/content?premium=true');
+  }
+
+  async function loadHome() {
+    // Featured
+    const data = await api('/api/content?limit=20');
+    if (!data) return;
+    allContent = data;
+
+    // Featured banner (first item with cover)
+    const featured = data.find(c => c.cover_url) || data[0];
+    const fw = document.getElementById('featuredWrap');
+    if (featured) {
+      fw.innerHTML = `
+        <div class="featured" onclick="openDetail(${featured.id})">
+          ${featured.cover_url
+            ? `<img class="featured-img" src="${featured.cover_url}" onerror="this.style.display='none'" />`
+            : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#1c1c21,#141417)">${featured.type==='series'?'📺':'🎥'}</div>`}
+          <div class="featured-gradient"></div>
+          <div class="featured-badge">${featured.is_premium ? '💎 Premium' : '🆕 New'}</div>
+          <div class="featured-info">
+            <div class="featured-title">${featured.title}</div>
+            <div class="featured-meta">${featured.type.toUpperCase()}${featured.year ? ' • ' + featured.year : ''}${featured.language ? ' • ' + featured.language : ''}</div>
+          </div>
+        </div>`;
+    }
+
+    // Latest row
+    const lr = document.getElementById('latestRow');
+    lr.innerHTML = data.slice(0, 10).map(c => cardHTML(c)).join('');
+
+    // All grid
+    const ag = document.getElementById('allGrid');
+    ag.innerHTML = data.map(c => gridCardHTML(c)).join('');
+  }
+
+  async function loadGrid(elId, url) {
+    const el = document.getElementById(elId);
+    el.innerHTML = '<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>';
+    const data = await api(url);
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🎬</div><div class="empty-text">No content yet</div></div>';
+      return;
+    }
+    el.innerHTML = data.map(c => gridCardHTML(c)).join('');
+  }
+
+  function renderGenres() {
+    const genres = ['Action','Comedy','Drama','Horror','Romance','Thriller','Sci-Fi','Animation','Documentary','Crime','Fantasy','Mystery','Adventure','Biography','History'];
+    document.getElementById('genreGrid').innerHTML = genres.map(g => `
+      <div class="genre-pill" onclick="openGenre('${g}')">
+        <div class="genre-icon">${GENRE_ICONS[g] || '🎬'}</div>
+        <div class="genre-name">${g}</div>
+      </div>`).join('');
+  }
+
+  async function openGenre(genre) {
+    document.getElementById('genreResultTitle').textContent = GENRE_ICONS[genre] + ' ' + genre;
+    showScreen('genre-results');
+    const el = document.getElementById('genreResultGrid');
+    el.innerHTML = '<div class="loader" style="grid-column:1/-1"><div class="spinner"></div></div>';
+    const data = await api('/api/content?genre=' + encodeURIComponent(genre));
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">😕</div><div class="empty-text">No ' + genre + ' content yet</div></div>';
+      return;
+    }
+    el.innerHTML = data.map(c => gridCardHTML(c)).join('');
+  }
+
+  // ── Detail ────────────────────────────────────────────────
+  async function openDetail(id) {
+    showScreen('detail');
+    document.getElementById('detailContent').innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+    const content = await api('/api/content/' + id);
+    if (!content) { document.getElementById('detailContent').innerHTML = '<div class="empty-state"><div class="empty-text">Not found</div></div>'; return; }
+    currentDetail = content;
+
+    let episodesHTML = '';
+    if (content.type === 'series') {
+      const eps = await api('/api/content/' + id + '/episodes');
+      episodesHTML = buildEpisodesHTML(eps || [], content);
+    }
+
+    const genres = Array.isArray(content.genre) ? content.genre : [];
+    document.getElementById('detailContent').innerHTML = `
+      <div class="detail-hero">
+        ${content.cover_url
+          ? `<img src="${content.cover_url}" onerror="this.src=''" alt="${content.title}" />`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(135deg,#1c1c21,#141417)">${content.type==='series'?'📺':'🎥'}</div>`}
+        <div class="detail-hero-gradient"></div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-title">${content.title}</div>
+        <div class="detail-meta">
+          ${content.type === 'series' ? '<span class="meta-tag">📺 Series</span>' : '<span class="meta-tag">🎥 Movie</span>'}
+          ${content.year ? `<span class="meta-tag">📅 ${content.year}</span>` : ''}
+          ${content.language ? `<span class="meta-tag">🌍 ${content.language}</span>` : ''}
+          ${content.rating ? `<span class="meta-tag">⭐ ${content.rating}</span>` : ''}
+          ${content.is_premium ? '<span class="meta-tag premium">💎 Premium</span>' : '<span class="meta-tag">🆓 Free</span>'}
+          ${genres.map(g => `<span class="meta-tag">${g}</span>`).join('')}
+        </div>
+        ${content.description ? `<div class="detail-desc">${content.description}</div>` : ''}
+        ${content.type === 'movie'
+          ? `<button class="watch-btn" onclick="watchInBot(${content.id})">▶ Watch Now</button>`
+          : ''}
+      </div>
+      ${episodesHTML}`;
+  }
+
+  function buildEpisodesHTML(episodes, content) {
+    if (!episodes.length) return `<div class="empty-state"><div class="empty-icon">📺</div><div class="empty-text">No episodes uploaded yet</div></div>`;
+
+    const seasons = {};
+    for (const ep of episodes) {
+      if (!seasons[ep.season]) seasons[ep.season] = [];
+      seasons[ep.season].push(ep);
+    }
+
+    const seasonNums = Object.keys(seasons).sort((a, b) => Number(a) - Number(b));
+    const seasonTabs = seasonNums.map((s, i) =>
+      `<button class="season-tab ${i === 0 ? 'active' : ''}" onclick="switchSeason(${s}, this)">${'Season ' + s}</button>`
+    ).join('');
+
+    const allEpsHTML = seasonNums.map((s, i) => `
+      <div class="episode-list" id="season-${s}" style="${i > 0 ? 'display:none' : ''}">
+        ${seasons[s].map(ep => `
+          <div class="episode-item" onclick="playEpisodeInBot(${ep.id})">
+            <div class="ep-num">E${ep.episode}</div>
+            <div class="ep-info">
+              <div class="ep-title">${ep.title || 'Episode ' + ep.episode}</div>
+              <div class="ep-meta">Season ${ep.season} • Episode ${ep.episode}</div>
+            </div>
+            <div class="ep-play">
+              <svg viewBox="0 0 24 24" fill="#0d0d0f" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>`).join('')}
+      </div>`).join('');
+
+    return `
+      <div class="season-tabs">${seasonTabs}</div>
+      ${allEpsHTML}`;
+  }
+
+  function switchSeason(num, btn) {
+    document.querySelectorAll('.season-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('[id^="season-"]').forEach(el => el.style.display = 'none');
+    document.getElementById('season-' + num).style.display = 'block';
+  }
+
+  function watchInBot(contentId) {
+    if (tg) {
+      tg.showAlert('▶️ Open your Telegram bot and use the Watch button to stream this content.');
+    } else {
+      showToast('Open the bot to watch');
+    }
+  }
+
+  function playEpisodeInBot(epId) {
+    if (tg) {
+      tg.showAlert('▶️ Open your Telegram bot to stream this episode.');
+    } else {
+      showToast('Open the bot to watch');
+    }
+  }
+
+  // ── Search ────────────────────────────────────────────────
+  function toggleSearch() {
+    const bar = document.getElementById('searchBar');
+    const open = bar.classList.toggle('open');
+    if (open) {
+      document.getElementById('searchInput').focus();
+      showScreen('search');
+      document.getElementById('searchResults').innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Type to search...</div></div>';
+    } else {
+      closeSearch();
+    }
+  }
+
+  function closeSearch() {
+    document.getElementById('searchBar').classList.remove('open');
+  }
+
+  function handleSearch(q) {
+    clearTimeout(searchTimeout);
+    if (!q.trim()) {
+      document.getElementById('searchResults').innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Type to search...</div></div>';
+      return;
+    }
+    searchTimeout = setTimeout(async () => {
+      document.getElementById('searchTitle').textContent = `Results for "${q}"`;
+      document.getElementById('searchResults').innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+      const data = await api('/api/search?q=' + encodeURIComponent(q));
+      if (!data || !data.length) {
+        document.getElementById('searchResults').innerHTML = '<div class="empty-state"><div class="empty-icon">😕</div><div class="empty-text">No results found</div></div>';
+        return;
+      }
+      document.getElementById('searchResults').innerHTML = data.map(c => `
+        <div class="result-item" onclick="openDetail(${c.id})">
+          <div class="result-thumb">
+            ${c.cover_url ? `<img src="${c.cover_url}" onerror="this.parentElement.innerHTML='${c.type === 'series' ? '📺' : '🎥'}'" />` : (c.type === 'series' ? '📺' : '🎥')}
+          </div>
+          <div class="result-info">
+            <div class="result-title">${c.title}${c.is_premium ? ' 💎' : ''}</div>
+            <div class="result-meta">${c.type.toUpperCase()}${c.year ? ' • ' + c.year : ''}${c.language ? ' • ' + c.language : ''}</div>
+          </div>
+        </div>`).join('');
+    }, 350);
+  }
+
+  // ── Card helpers ──────────────────────────────────────────
+  function cardHTML(c) {
+    return `
+      <div class="card" onclick="openDetail(${c.id})">
+        <div class="card-thumb-wrap">
+          ${c.cover_url
+            ? `<img src="${c.cover_url}" alt="${c.title}" onerror="this.style.display='none'" loading="lazy" />`
+            : `<div class="card-thumb-placeholder">${c.type === 'series' ? '📺' : '🎥'}</div>`}
+          ${c.is_premium ? '<span class="card-premium-badge">💎</span>' : ''}
+          <span class="card-type-badge">${c.type === 'series' ? 'SERIES' : 'MOVIE'}</span>
+        </div>
+        <div class="card-title">${c.title}</div>
+        ${c.year ? `<div class="card-year">${c.year}</div>` : ''}
+      </div>`;
+  }
+
+  function gridCardHTML(c) {
+    return `
+      <div class="card" onclick="openDetail(${c.id})">
+        <div class="card-thumb-wrap" style="height:0;padding-bottom:146%;position:relative">
+          ${c.cover_url
+            ? `<img src="${c.cover_url}" alt="${c.title}" onerror="this.style.display='none'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" />`
+            : `<div class="card-thumb-placeholder" style="position:absolute;inset:0;height:auto">${c.type === 'series' ? '📺' : '🎥'}</div>`}
+          ${c.is_premium ? '<span class="card-premium-badge">💎</span>' : ''}
+          <span class="card-type-badge">${c.type === 'series' ? 'SERIES' : 'MOVIE'}</span>
+        </div>
+        <div class="card-title">${c.title}</div>
+        ${c.year ? `<div class="card-year">${c.year}</div>` : ''}
+      </div>`;
+  }
+
+  // ── Toast ─────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  loadHome();
+  renderGenres();
+</script>
+</body>
+</html>
